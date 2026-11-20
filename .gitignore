@@ -1,0 +1,15 @@
+# Vagrant
+.vagrant/
+*.box
+
+# Chaves SSH (nunca versionar chaves privadas)
+lab_key
+*.pem
+id_rsa
+id_ed25519
+
+# Logs e temporários
+*.log
+*.retry
+*.swp
+*~
