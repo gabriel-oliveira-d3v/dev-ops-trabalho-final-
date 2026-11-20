@@ -1,0 +1,323 @@
+\documentclass[12pt,a4paper]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[brazil]{babel}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{geometry}
+\usepackage{indentfirst}
+
+\geometry{margin=3cm}
+
+\definecolor{codebg}{RGB}{245,245,245}
+\lstset{
+  backgroundcolor=\color{codebg},
+  basicstyle=\ttfamily\small,
+  breaklines=true,
+  frame=single,
+  numbers=left,
+  numberstyle=\tiny,
+  showstringspaces=false,
+  tabsize=2
+}
+
+\title{Relat\'orio das Atividades Pr\'aticas de Fundamentos de DevOps}
+\author{NOME DO ALUNO}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\tableofcontents
+\newpage
+
+\section{Introdu\c{c}\~ao}
+
+DevOps \'e uma cultura e um conjunto de pr\'aticas que aproxima as equipes de
+desenvolvimento (Dev) e de opera\c{c}\~oes (Ops), com o objetivo de entregar
+software com mais qualidade, frequ\^encia e seguran\c{c}a. A integra\c{c}\~ao entre
+desenvolvimento e opera\c{c}\~oes \'e importante porque reduz o tempo entre a
+cria\c{c}\~ao de uma funcionalidade e sua disponibiliza\c{c}\~ao ao usu\'ario,
+diminuindo falhas de comunica\c{c}\~ao e aumentando a confiabilidade do ambiente.
+
+A automa\c{c}\~ao, o versionamento, a Infraestrutura como C\'odigo (IaC), os
+containers, a an\'alise de c\'odigo e os pipelines s\~ao importantes porque tornam
+o processo repet\'ivel, rastre\'avel e menos sujeito a erros manuais. Com essas
+pr\'aticas, o ambiente pode ser recriado a qualquer momento, as mudan\c{c}as ficam
+registradas e a qualidade do c\'odigo pode ser verificada antes do deploy.
+
+O objetivo das pr\'aticas realizadas na disciplina foi construir um ambiente
+completo de laborat\'orio, passando pela cria\c{c}\~ao de m\'aquinas virtuais com
+Vagrant, pelo versionamento com Git e GitHub, pela automa\c{c}\~ao com Ansible e
+pela integra\c{c}\~ao com SonarQube e Jenkins dentro do ciclo DevOps.
+
+\section{Desenvolvimento}
+
+\subsection{Atividade com Vagrant}
+
+O Vagrant \'e uma ferramenta de automa\c{c}\~ao de ambientes que permite criar e
+gerenciar m\'aquinas virtuais de forma reproduz\'ivel a partir de um arquivo de
+configura\c{c}\~ao chamado \texttt{Vagrantfile}. Na disciplina, ele foi utilizado
+para criar um laborat\'orio com tr\^es m\'aquinas virtuais: um n\'o de controle
+(\texttt{control-node}), um servidor de aplica\c{c}\~ao (\texttt{app01}) e um
+servidor de banco de dados (\texttt{db01}).
+
+\begin{itemize}
+  \item \textbf{Box utilizada:} \texttt{generic/rocky9}
+  \item \textbf{Provider:} libvirt (KVM)
+  \item \textbf{M\'aquinas:} 3 VMs
+  \item \textbf{Hostnames e IPs:} \texttt{control-node} (192.168.1.2),
+        \texttt{app01} (192.168.1.3) e \texttt{db01} (192.168.1.4)
+  \item \textbf{Portas redirecionadas:} 80 do \texttt{app01} para 8080 do host;
+        3306 do \texttt{db01} para 3306 do host
+\end{itemize}
+
+O \texttt{Vagrantfile} principal define a box, o nome de cada m\'aquina, o IP da
+rede privada, as portas redirecionadas, o provisionamento via shell script e a
+quantidade de mem\'oria e CPUs de cada VM.
+
+\begin{lstlisting}[language=Ruby,caption={Trecho do Vagrantfile}]
+Vagrant.configure("2") do |config|
+  config.vm.box = "generic/rocky9"
+
+  config.vm.define "control-node" do |c|
+    c.vm.hostname = "control-node"
+    c.vm.network "private_network", ip: "192.168.1.2"
+    c.vm.provision "shell", path: "control-node/provision.sh"
+    c.vm.provider "libvirt" do |libvirt|
+      libvirt.memory = 2048
+      libvirt.cpus = 2
+    end
+  end
+end
+\end{lstlisting}
+
+Comandos utilizados:
+
+\begin{lstlisting}[language=bash,caption={Comandos do Vagrant}]
+vagrant up
+vagrant status
+vagrant ssh control-node
+vagrant halt
+vagrant reload
+vagrant destroy
+\end{lstlisting}
+
+\begin{figure}[htbp]
+  \centering
+  % TODO: substituir pelo print do vagrant status com as maquinas em execucao
+  % \includegraphics[width=0.9\textwidth]{imagens/vagrant-status.png}
+  \caption{Execu\c{c}\~ao do \texttt{vagrant status} com as m\'aquinas ativas.}
+\end{figure}
+
+\subsection{Atividade com Git e GitHub}
+
+O Git \'e um sistema de controle de vers\~ao distribu\'ido que registra o
+hist\'orico de altera\c{c}\~oes de um projeto. Um reposit\'orio local fica na
+m\'aquina do desenvolvedor, enquanto o reposit\'orio remoto fica hospedado em um
+servi\c{c}o como o GitHub. O \textit{commit} registra um conjunto de altera\c{c}\~oes
+no hist\'orico; o \textit{push} envia os commits para o remoto; o \textit{pull}
+traz as altera\c{c}\~oes do remoto; e a \textit{branch} permite trabalhar em
+ramifica\c{c}\~oes paralelas do projeto.
+
+Na disciplina, o Git foi utilizado para versionar os arquivos do ambiente
+(Vagrantfile, scripts de provisionamento, invent\'ario e playbooks do Ansible,
+Jenkinsfile e o c\'odigo da aplica\c{c}\~ao). O versionamento \'e importante em
+DevOps porque permite rastrear mudan\c{c}as, voltar a vers\~oes anteriores e
+integrar o c\'odigo a pipelines de CI/CD.
+
+\begin{lstlisting}[language=bash,caption={Comandos do Git utilizados}]
+git init
+git status
+git add .
+git commit -m "infraestrutura devops"
+git remote add origin https://github.com/USUARIO/trabalho-devops.git
+git push -u origin main
+git branch
+git checkout -b nova-branch
+git merge nova-branch
+\end{lstlisting}
+
+\begin{figure}[htbp]
+  \centering
+  % TODO: print do repositorio no GitHub
+  % \includegraphics[width=0.9\textwidth]{imagens/github-repositorio.png}
+  \caption{Reposit\'orio do projeto no GitHub.}
+\end{figure}
+
+\begin{figure}[htbp]
+  \centering
+  % TODO: print do git status e do git log
+  % \includegraphics[width=0.9\textwidth]{imagens/git-status.png}
+  \caption{Comandos \texttt{git status} e \texttt{git log} executados.}
+\end{figure}
+
+\subsection{Atividade com Ansible}
+
+O Ansible \'e uma ferramenta de automa\c{c}\~ao de configura\c{c}\~ao que permite
+descrever o estado desejado dos servidores em arquivos YAML chamados playbooks.
+Ele implementa o conceito de Infraestrutura como C\'odigo, pois a configura\c{c}\~ao
+do ambiente fica registrada em arquivos version\'aveis. O \textit{Control Node} \'e
+a m\'aquina que executa o Ansible; os \textit{Managed Hosts} s\~ao os servidores
+gerenciados. A comunica\c{c}\~ao \'e feita via SSH, sem necessidade de agente
+instalado nos hosts.
+
+O invent\'ario foi configurado em \texttt{/home/vagrant/ansible/inventory.ini},
+com o grupo \texttt{[control]} e o grupo \texttt{[servidores]}:
+
+\begin{lstlisting}[caption={Invent\'ario do Ansible}]
+[control]
+control-node ansible_host=192.168.1.2
+
+[servidores]
+app01 ansible_host=192.168.1.3
+db01 ansible_host=192.168.1.4
+
+[servidores:vars]
+ansible_user=vagrant
+\end{lstlisting}
+
+O playbook \texttt{app.yml} instala e inicia o \texttt{httpd} no \texttt{app01},
+cria a p\'agina inicial e libera a porta 80 no firewall. O playbook \texttt{db.yml}
+instala e inicia o \texttt{mariadb-server} no \texttt{db01} e libera a porta 3306.
+
+\begin{lstlisting}[language=YAML,caption={Trecho do playbook app.yml}]
+---
+- name: Configurar servidor de aplicacao
+  hosts: app01
+  become: yes
+
+  tasks:
+    - name: Instalar o httpd
+      dnf:
+        name: httpd
+        state: present
+
+    - name: Habilitar e iniciar o httpd
+      service:
+        name: httpd
+        state: started
+        enabled: yes
+\end{lstlisting}
+
+\begin{lstlisting}[language=bash,caption={Comandos do Ansible}]
+ansible all -m ping
+ansible-playbook playbooks/site.yml
+ssh vagrant@192.168.1.3
+\end{lstlisting}
+
+\begin{figure}[htbp]
+  \centering
+  % TODO: print do ansible all -m ping
+  % \includegraphics[width=0.9\textwidth]{imagens/ansible-ping.png}
+  \caption{Teste de conectividade com \texttt{ansible all -m ping}.}
+\end{figure}
+
+\begin{figure}[htbp]
+  \centering
+  % TODO: print da execucao do playbook
+  % \includegraphics[width=0.9\textwidth]{imagens/ansible-playbook.png}
+  \caption{Execu\c{c}\~ao do playbook \texttt{site.yml}.}
+\end{figure}
+
+\subsection{Atividade com SonarQube}
+
+O SonarQube \'e uma plataforma de an\'alise est\'atica de c\'odigo que identifica
+bugs, vulnerabilidades, code smells e duplica\c{c}\~oes. A an\'alise est\'atica
+\'e importante porque encontra problemas antes que o c\'odigo chegue ao ambiente
+de produ\c{c}\~ao, contribuindo para a qualidade e a seguran\c{c}a da aplica\c{c}\~ao.
+
+O SonarQube foi executado em uma m\'aquina virtual dedicada
+(\texttt{sonarqube}, IP 192.168.1.5), via container Podman, com acesso pelo
+navegador em \texttt{http://localhost:9000}. O projeto foi criado no painel e a
+an\'alise foi executada com o \texttt{sonar-scanner}.
+
+\begin{lstlisting}[language=bash,caption={Comando do sonar-scanner}]
+sonar-scanner \
+  -Dsonar.projectKey=app-exemplo \
+  -Dsonar.sources=. \
+  -Dsonar.host.url=http://192.168.1.5:9000 \
+  -Dsonar.login=TOKEN_OCULTADO
+\end{lstlisting}
+
+\begin{figure}[htbp]
+  \centering
+  % TODO: print do dashboard do SonarQube com os resultados
+  % \includegraphics[width=0.9\textwidth]{imagens/sonarqube-dashboard.png}
+  \caption{Dashboard do SonarQube com o resultado da an\'alise.}
+\end{figure}
+
+\subsection{Atividade com Jenkins}
+
+O Jenkins \'e um servidor de automa\c{c}\~ao usado para implementar pr\'aticas de
+CI/CD. A Integra\c{c}\~ao Cont\'inua (CI) automatiza o build e os testes a cada
+altera\c{c}\~ao no c\'odigo; a Entrega Cont\'inua garante que o software esteja
+sempre pronto para ser implantado; e o Deploy Cont\'inuo automatiza a implanta\c{c}\~ao
+em produ\c{c}\~ao.
+
+O Jenkins foi executado em uma m\'aquina virtual dedicada (\texttt{jenkins}, IP
+192.168.1.6), via container Podman, com acesso em \texttt{http://localhost:8081}.
+Foi criado um pipeline declarativo com as etapas de Checkout, Build, Test,
+An\'alise SonarQube e Deploy.
+
+\begin{lstlisting}[language=Groovy,caption={Trecho do Jenkinsfile}]
+pipeline {
+    agent any
+
+    stages {
+        stage('Build') {
+            steps {
+                echo 'Executando build da aplicacao'
+            }
+        }
+        stage('Test') {
+            steps {
+                echo 'Executando testes'
+            }
+        }
+        stage('Deploy') {
+            steps {
+                echo 'Executando deploy'
+            }
+        }
+    }
+}
+\end{lstlisting}
+
+\begin{figure}[htbp]
+  \centering
+  % TODO: print do pipeline executado com sucesso
+  % \includegraphics[width=0.9\textwidth]{imagens/jenkins-pipeline.png}
+  \caption{Pipeline executado com sucesso no Jenkins.}
+\end{figure}
+
+\section{Conclus\~ao}
+
+As pr\'aticas permitiram compreender como as ferramentas se integram dentro do
+ciclo DevOps: o Vagrant cria o ambiente, o Git versiona a infraestrutura e o
+c\'odigo, o Ansible automatiza a configura\c{c}\~ao, o SonarQube verifica a
+qualidade e o Jenkins automatiza o pipeline. O resultado \'e um processo mais
+r\'apido, confi\'avel e reproduz\'ivel.
+
+\section{Pergunta Reflexiva Final}
+
+% TODO: escrever a resposta com as suas proprias palavras (minimo 10 linhas),
+% abordando: tecnologia nova/pouco conhecida, o que aprendeu, maior dificuldade,
+% como a pratica ajudou, como as ferramentas se conectam e a importancia para
+% a formacao profissional.
+
+\section*{Refer\^encias}
+
+\begin{itemize}
+  \item Documenta\c{c}\~ao oficial do Vagrant: \url{https://developer.hashicorp.com/vagrant/docs}
+  \item Documenta\c{c}\~ao oficial do Git: \url{https://git-scm.com/doc}
+  \item Documenta\c{c}\~ao oficial do Ansible: \url{https://docs.ansible.com/}
+  \item Documenta\c{c}\~ao oficial do SonarQube: \url{https://docs.sonarsource.com/sonarqube/}
+  \item Documenta\c{c}\~ao oficial do Jenkins: \url{https://www.jenkins.io/doc/}
+\end{itemize}
+
+\end{document}
