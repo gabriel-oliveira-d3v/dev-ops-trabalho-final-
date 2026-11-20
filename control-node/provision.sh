@@ -21,8 +21,34 @@ EOT
 
 echo "configuracao da chave privada SSH (recebida pela pasta compartilhada /vagrant)"
 install -m 700 -o vagrant -g vagrant -d /home/vagrant/.ssh
-install -m 600 -o vagrant -g vagrant /vagrant/lab_key /home/vagrant/.ssh/id_ed25519
-install -m 644 -o vagrant -g vagrant /vagrant/lab_key.pub /home/vagrant/.ssh/id_ed25519.pub
+KEY_PRIV=""
+KEY_PUB=""
+for base in /vagrant /vagrant/control-node; do
+  if [ -f "$base/lab_key" ]; then
+    KEY_PRIV="$base/lab_key"
+    KEY_PUB="$base/lab_key.pub"
+    break
+  fi
+done
+if [ -n "$KEY_PRIV" ]; then
+  install -m 600 -o vagrant -g vagrant "$KEY_PRIV" /home/vagrant/.ssh/id_ed25519
+  install -m 644 -o vagrant -g vagrant "$KEY_PUB" /home/vagrant/.ssh/id_ed25519.pub
+  # Permite que o control-node conecte em si mesmo via Ansible
+  grep -qF "$(cat "$KEY_PUB")" /home/vagrant/.ssh/authorized_keys 2>/dev/null || cat "$KEY_PUB" >> /home/vagrant/.ssh/authorized_keys
+  chmod 600 /home/vagrant/.ssh/authorized_keys
+  chown vagrant:vagrant /home/vagrant/.ssh/authorized_keys
+else
+  echo "ERRO: lab_key nao encontrada na pasta compartilhada"
+fi
+
+# Copia os playbooks do projeto (quando disponiveis na pasta compartilhada)
+if [ -d /vagrant/ansible/playbooks ]; then
+  mkdir -p /home/vagrant/ansible
+  cp -r /vagrant/ansible/playbooks /home/vagrant/ansible/
+  cp /vagrant/ansible/inventory.ini /home/vagrant/ansible/inventory.ini
+  cp /vagrant/ansible/ansible.cfg /home/vagrant/ansible/ansible.cfg
+  chown -R vagrant:vagrant /home/vagrant/ansible
+fi
 
 echo "criacao do inventario do ansible"
 mkdir -p /home/vagrant/ansible
@@ -37,6 +63,11 @@ db01 ansible_host=192.168.1.4
 [servidores:vars]
 ansible_user=vagrant
 INI
+cat > /home/vagrant/ansible/ansible.cfg <<'CFG'
+[defaults]
+inventory = ./inventory.ini
+host_key_checking = False
+CFG
 chown -R vagrant:vagrant /home/vagrant/ansible
 
 

@@ -1,0 +1,43 @@
+---
+- name: Configurar servidor de aplicacao
+  hosts: app01
+  become: yes
+
+  tasks:
+    - name: Instalar o httpd
+      dnf:
+        name: httpd
+        state: present
+
+    - name: Criar a pagina inicial
+      copy:
+        content: |
+          <html>
+            <body>
+              <h1>Servidor app01 - Fundamentos de DevOps</h1>
+              <p>Ambiente provisionado com Vagrant e configurado com Ansible.</p>
+            </body>
+          </html>
+        dest: /var/www/html/index.html
+        owner: root
+        group: root
+        mode: "0644"
+
+    - name: Habilitar e iniciar o httpd
+      service:
+        name: httpd
+        state: started
+        enabled: yes
+
+    - name: Liberar a porta 80 no firewalld
+      firewalld:
+        port: 80/tcp
+        permanent: yes
+        state: enabled
+      notify: Recarregar firewalld
+
+  handlers:
+    - name: Recarregar firewalld
+      service:
+        name: firewalld
+        state: restarted

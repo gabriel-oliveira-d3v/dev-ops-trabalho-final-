@@ -1,0 +1,29 @@
+---
+- name: Configurar servidor de banco de dados
+  hosts: db01
+  become: yes
+
+  tasks:
+    - name: Instalar o mariadb-server
+      dnf:
+        name: mariadb-server
+        state: present
+
+    - name: Habilitar e iniciar o mariadb
+      service:
+        name: mariadb
+        state: started
+        enabled: yes
+
+    - name: Liberar a porta 3306 no firewalld
+      firewalld:
+        port: 3306/tcp
+        permanent: yes
+        state: enabled
+      notify: Recarregar firewalld
+
+  handlers:
+    - name: Recarregar firewalld
+      service:
+        name: firewalld
+        state: restarted

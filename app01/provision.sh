@@ -35,8 +35,21 @@ sudo tee -a /etc/hosts > /dev/null <<EOT
 EOT
 
 echo "configuracao de chave publica (distribuida via pasta compartilhada /vagrant)"
-cat /vagrant/lab_key.pub >> /home/vagrant/.ssh/authorized_keys
-chmod 600 /home/vagrant/.ssh/authorized_keys
+PUB=""
+for base in /vagrant /vagrant/app01; do
+  if [ -f "$base/lab_key.pub" ]; then
+    PUB="$base/lab_key.pub"
+    break
+  fi
+done
+if [ -n "$PUB" ]; then
+  mkdir -p /home/vagrant/.ssh
+  grep -qF "$(cat "$PUB")" /home/vagrant/.ssh/authorized_keys 2>/dev/null || cat "$PUB" >> /home/vagrant/.ssh/authorized_keys
+  chmod 600 /home/vagrant/.ssh/authorized_keys
+  chown -R vagrant:vagrant /home/vagrant/.ssh
+else
+  echo "ERRO: lab_key.pub nao encontrada na pasta compartilhada"
+fi
 
 echo "=========================="
 echo "Testes de conectividade"

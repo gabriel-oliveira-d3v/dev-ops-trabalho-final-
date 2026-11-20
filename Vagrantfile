@@ -3,6 +3,7 @@
 
 Vagrant.configure("2") do |config|
   config.vm.box = "generic/rocky9"
+  config.vm.synced_folder ".", "/vagrant"
 
   config.vm.define "control-node" do |c|
     c.vm.hostname = "control-node"
@@ -32,6 +33,28 @@ Vagrant.configure("2") do |config|
     d.vm.provision "shell", path: "db01/provision.sh"
     d.vm.provider "libvirt" do |libvirt|
       libvirt.memory = 1024
+      libvirt.cpus = 2
+    end
+  end
+
+  config.vm.define "sonarqube" do |s|
+    s.vm.hostname = "sonarqube"
+    s.vm.network "forwarded_port", guest: 9000, host: 9000
+    s.vm.network "private_network", ip: "192.168.1.5"
+    s.vm.provision "shell", path: "sonarqube/provision.sh"
+    s.vm.provider "libvirt" do |libvirt|
+      libvirt.memory = 2048
+      libvirt.cpus = 2
+    end
+  end
+
+  config.vm.define "jenkins" do |j|
+    j.vm.hostname = "jenkins"
+    j.vm.network "forwarded_port", guest: 8080, host: 8081
+    j.vm.network "private_network", ip: "192.168.1.6"
+    j.vm.provision "shell", path: "jenkins/provision.sh"
+    j.vm.provider "libvirt" do |libvirt|
+      libvirt.memory = 2048
       libvirt.cpus = 2
     end
   end
