@@ -25,9 +25,9 @@ O `Jenkinsfile` executa as etapas:
 2. **Build** — instala dependências e valida a sintaxe;
 3. **Test** — executa os testes com `node:test`;
 4. **SonarQube** — executa o `sonar-scanner` com o token cadastrado no Jenkins;
-5. **Deploy** — copia a aplicação para `deploy@192.168.1.3:/opt/nodeapp` e
+5. **Deploy** — copia a aplicação para o servidor de aplicação (`deploy@<app01-ip>:/opt/nodeapp`) e
    reinicia o serviço `nodeapp`;
-6. **Verify** — consulta `http://192.168.1.3:3000/health`.
+6. **Verify** — consulta o endpoint `/health` do servidor de aplicação.
 
 O arquivo `src/legacy.js` contém exemplos intencionais de más práticas para a
 análise estática. Ele não é usado pela aplicação em execução.
