@@ -57,7 +57,8 @@ pipeline {
         stage('Verify') {
             steps {
                 echo 'Validando a aplicacao publicada'
-                sh 'curl --fail --silent --show-error http://192.168.1.3:3000/health'
+                sleep 3
+                sh 'curl --fail --silent --show-error --retry 3 --retry-delay 2 http://192.168.1.3:3000/health'
             }
         }
     }
