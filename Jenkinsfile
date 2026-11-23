@@ -2,9 +2,9 @@ pipeline {
     agent any
 
     environment {
-        APP_HOST = 'deploy@192.168.1.3'
+        APP_HOST = 'deploy@<app01-ip>'
         APP_PATH = '/opt/nodeapp'
-        SONAR_HOST = 'http://192.168.1.5:9000'
+        SONAR_HOST = 'http://<sonarqube-ip>:9000'
     }
 
     stages {
@@ -58,7 +58,7 @@ pipeline {
             steps {
                 echo 'Validando a aplicacao publicada'
                 sleep 3
-                sh 'curl --fail --silent --show-error --retry 3 --retry-delay 2 http://192.168.1.3:3000/health'
+                sh 'curl --fail --silent --show-error --retry 3 --retry-delay 2 http://<app01-ip>:3000/health'
             }
         }
     }
