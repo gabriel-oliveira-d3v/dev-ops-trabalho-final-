@@ -49,7 +49,7 @@ pipeline {
                       "$APP_HOST:$APP_PATH/"
 
                     ssh -o StrictHostKeyChecking=no "$APP_HOST" \
-                      "sudo systemctl restart nodeapp"
+                      "sudo systemctl restart nodeapp.service"
                 '''
             }
         }
